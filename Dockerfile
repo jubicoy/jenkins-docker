@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y \
   expect \
   lib32stdc++6 \
   maven \
-  zlib1g:i386
+  zlib1g:i386 \
+  make
 
 # from nodejs/docker-node
 RUN set -ex \
