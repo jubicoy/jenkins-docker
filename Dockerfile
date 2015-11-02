@@ -10,7 +10,9 @@ RUN apt-get update && apt-get install -y \
   lib32stdc++6 \
   maven \
   zlib1g:i386 \
-  make
+  make \
+  gettext \
+  xvfb
 
 # from nodejs/docker-node
 RUN set -ex \
@@ -33,11 +35,23 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
   && npm install -g npm@"$NPM_VERSION" \
   && npm cache clear
 
+# install oc
 RUN curl -SLO "https://github.com/openshift/origin/releases/download/v1.0.5/openshift-origin-v1.0.5-96963b6-linux-amd64.tar.gz" \
   && mkdir -p /tmp/.jubicoy-jenkins-tmp \
-  && tar -xvf "openshift-origin-v1.0.5-96963b6-linux-amd64.tar.gz" -C /tmp/.jubicoy-jenkins-tmp --strip-components=1 \
+  && tar -xzvf "openshift-origin-v1.0.5-96963b6-linux-amd64.tar.gz" -C /tmp/.jubicoy-jenkins-tmp --strip-components=1 \
   && cp /tmp/.jubicoy-jenkins-tmp/oc /usr/local/bin/ \
   && rm "openshift-origin-v1.0.5-96963b6-linux-amd64.tar.gz" /tmp/.jubicoy-jenkins-tmp -rf
+
+# install firefox deps
+RUN apt-get update && apt-get install -y iceweasel \
+  && dpkg -P --force-all iceweasel
+# install firefox
+RUN curl -SLO "https://download-installer.cdn.mozilla.net/pub/firefox/releases/41.0.2/linux-x86_64/en-US/firefox-41.0.2.tar.bz2" \
+  && mkdir -p /tmp/.jubicoy-firefox-tmp \
+  && tar -xjf "firefox-41.0.2.tar.bz2" -C /tmp/.jubicoy-firefox-tmp \
+  && mv /tmp/.jubicoy-firefox-tmp/firefox /usr/local/firefox \
+  && rm "firefox-41.0.2.tar.bz2" -f \
+  && ln -s /usr/local/firefox/firefox /usr/local/bin/firefox
 
 RUN rm -rf /var/lib/apt/lists/*
 
