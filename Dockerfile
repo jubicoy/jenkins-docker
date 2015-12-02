@@ -1,58 +1,86 @@
-FROM jenkins
+FROM jubicoy/jenkins-base
 
 USER root
 
+# Group Development Tools
+RUN yum install -y \
+  bison \
+  byacc \
+  cscope \
+  ctags \
+  cvs \
+  diffstat \
+  doxygen \
+  flex \
+  gcc \
+  gcc-c++ \
+  gcc-gfortran \
+  git \
+  indent \
+  intltool \
+  libtool \
+  patch \
+  patchutils \
+  rcs \
+  subversion \
+  swig \
+  systemtap
+
 # Extra deps
-RUN dpkg --add-architecture i386
-RUN apt-get update && apt-get install -y \
-  build-essential \
+RUN  yum install -y \
+  kernel-devel \
   expect \
-  lib32stdc++6 \
+  libstdc++.i686 \
+  zlib.i686 \
+  zlib-devel.i686 \
   maven \
-  zlib1g:i386 \
   make \
   gettext \
-  xvfb
+  xorg-x11-server-Xvfb \
+  curl \
+  wget \
+  bzip2
 
 # from nodejs/docker-node
+ENV NODE_VERSION 0.10.40
+ENV NPM_VERSION 2.14.1
+
 RUN set -ex \
   && for key in \
     7937DFD2AB06298B2293C3187D33FF9D0246406D \
     114F43EE0176B71C7BC219DD50A3051F888C628D \
   ; do \
-    gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
-  done
-
-ENV NODE_VERSION 0.10.40
-ENV NPM_VERSION 2.14.1
-
-RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
+    gpg --homedir  /var/lib/jenkins/.gnupg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+  done \
+  && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
   && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
-  && gpg --verify SHASUMS256.txt.asc \
+  && gpg --homedir /var/lib/jenkins/.gnupg --verify SHASUMS256.txt.asc \
   && grep " node-v$NODE_VERSION-linux-x64.tar.gz\$" SHASUMS256.txt.asc | sha256sum -c - \
   && tar -xzf "node-v$NODE_VERSION-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
   && rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc \
   && npm install -g npm@"$NPM_VERSION" \
   && npm cache clear
 
-# install oc
-RUN curl -SLO "https://github.com/openshift/origin/releases/download/v1.0.5/openshift-origin-v1.0.5-96963b6-linux-amd64.tar.gz" \
-  && mkdir -p /tmp/.jubicoy-jenkins-tmp \
-  && tar -xzvf "openshift-origin-v1.0.5-96963b6-linux-amd64.tar.gz" -C /tmp/.jubicoy-jenkins-tmp --strip-components=1 \
-  && cp /tmp/.jubicoy-jenkins-tmp/oc /usr/local/bin/ \
-  && rm "openshift-origin-v1.0.5-96963b6-linux-amd64.tar.gz" /tmp/.jubicoy-jenkins-tmp -rf
+# Setup DBus
+RUN dbus-uuidgen > /etc/machine-id
 
-# install firefox deps
-RUN apt-get update && apt-get install -y iceweasel \
-  && dpkg -P --force-all iceweasel
 # install firefox
-RUN curl -SLO "https://download-installer.cdn.mozilla.net/pub/firefox/releases/41.0.2/linux-x86_64/en-US/firefox-41.0.2.tar.bz2" \
-  && mkdir -p /tmp/.jubicoy-firefox-tmp \
-  && tar -xjf "firefox-41.0.2.tar.bz2" -C /tmp/.jubicoy-firefox-tmp \
-  && mv /tmp/.jubicoy-firefox-tmp/firefox /usr/local/firefox \
-  && rm "firefox-41.0.2.tar.bz2" -f \
+RUN yum install -y firefox \
+  && rpm -e --nodeps firefox
+RUN mkdir -p /tmp/.jubicoy-firefox-tmp \
+  && cd /tmp/.jubicoy-firefox-tmp \
+  && curl -SLO "https://download-installer.cdn.mozilla.net/pub/firefox/releases/41.0.2/linux-x86_64/en-US/firefox-41.0.2.tar.bz2" \
+  && ls -alh \
+  && mkdir -p ext-tgt \
+  && tar -xjf /tmp/.jubicoy-firefox-tmp/firefox-41.0.2.tar.bz2 -C /tmp/.jubicoy-firefox-tmp/ext-tgt \
+  && mv /tmp/.jubicoy-firefox-tmp/ext-tgt/firefox /usr/local/firefox \
+  && rm /tmp/.jubicoy-firefox-tmp -rf \
   && ln -s /usr/local/firefox/firefox /usr/local/bin/firefox
 
-RUN rm -rf /var/lib/apt/lists/*
+RUN yum -y clean all
 
-USER jenkins
+# Enable Java 8
+RUN alternatives --set java /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.65-2.b17.el7_1.x86_64/jre/bin/java \
+  && alternatives --set javac /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.65-2.b17.el7_1.x86_64/bin/javac
+
+USER 1001
