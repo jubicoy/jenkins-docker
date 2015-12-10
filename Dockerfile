@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y \
   expect \
   lib32stdc++6 \
   maven \
+  gcc-4.9-base:i386 \
+  libgcc1:i386 \
+  libc6:i386 \
   zlib1g:i386 \
   make \
   gettext \
