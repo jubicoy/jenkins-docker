@@ -15,44 +15,53 @@ RUN apt-get update && apt-get install -y \
   zlib1g:i386 \
   make \
   gettext \
-  xvfb
+  xvfb \
+  ldap-utils
 
 # from nodejs/docker-node
-ENV NODE_VERSION 0.10.40
-ENV NPM_VERSION 2.14.1
+# gpg keys listed at https://github.com/nodejs/node
 RUN set -ex \
-    && for key in \
-      7937DFD2AB06298B2293C3187D33FF9D0246406D \
-      114F43EE0176B71C7BC219DD50A3051F888C628D \
-    ; do \
-      gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
-    done \
-  && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
+  && for key in \
+    9554F04D7259F04124DE6B476D5A82AC7E37093B \
+    94AE36675C464D64BAFA68DD7434390BDBE9B9C5 \
+    0034A06D9D9B0064CE8ADF6BF1747F4AD2306D93 \
+    FD3A5288F042B6850C66B31F09FE44734EB7990E \
+    71DCFD284A79C3B38668286BC97EC7A07EDE3FC1 \
+    DD8F2338BAE7501E3DD5AC78C273792F7D83545D \
+    B9AE9905FFD7803F25714661B63B535A4C206CA9 \
+    C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8 \
+  ; do \
+    gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+  done
+
+ENV NPM_CONFIG_LOGLEVEL info
+ENV NODE_VERSION 7.3.0
+
+RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz" \
   && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
-  && gpg --verify SHASUMS256.txt.asc \
-  && grep " node-v$NODE_VERSION-linux-x64.tar.gz\$" SHASUMS256.txt.asc | sha256sum -c - \
-  && tar -xzf "node-v$NODE_VERSION-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
-  && rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc \
-  && npm install -g npm@"$NPM_VERSION" \
-  && npm cache clear
+  && gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc \
+  && grep " node-v$NODE_VERSION-linux-x64.tar.xz\$" SHASUMS256.txt | sha256sum -c - \
+  && tar -xJf "node-v$NODE_VERSION-linux-x64.tar.xz" -C /usr/local --strip-components=1 \
+  && rm "node-v$NODE_VERSION-linux-x64.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt \
+  && ln -s /usr/local/bin/node /usr/local/bin/nodejs
 
 # install oc
-ENV OPENSHIFT_VERSION v1.1
-ENV OPENSHIFT_COMMIT_SHA ac7a99a
+ENV OPENSHIFT_VERSION v1.2.1
+ENV OPENSHIFT_COMMIT_SHA 5e723f6
 ENV OPENSHIFT_INSTALL_TMP /tmp/.jubicoy-openshift-tmp
 RUN mkdir -p "${OPENSHIFT_INSTALL_TMP}/extracted" \
   && cd "${OPENSHIFT_INSTALL_TMP}" \
-  && curl -SLO "https://github.com/openshift/origin/releases/download/${OPENSHIFT_VERSION}/openshift-origin-${OPENSHIFT_VERSION}-${OPENSHIFT_COMMIT_SHA}-linux-amd64.tar.gz" \
-  && tar -xzvf "openshift-origin-${OPENSHIFT_VERSION}-${OPENSHIFT_COMMIT_SHA}-linux-amd64.tar.gz" -C "${OPENSHIFT_INSTALL_TMP}/extracted" --strip-components=1 \
+  && curl -SLO "https://github.com/openshift/origin/releases/download/${OPENSHIFT_VERSION}/openshift-origin-client-tools-${OPENSHIFT_VERSION}-${OPENSHIFT_COMMIT_SHA}-linux-64bit.tar.gz" \
+  && tar -xzvf "openshift-origin-client-tools-${OPENSHIFT_VERSION}-${OPENSHIFT_COMMIT_SHA}-linux-64bit.tar.gz" -C "${OPENSHIFT_INSTALL_TMP}/extracted" --strip-components=1 \
   && cp "${OPENSHIFT_INSTALL_TMP}/extracted/oc" /usr/local/bin/ \
-  && rm "openshift-origin-${OPENSHIFT_VERSION}-${OPENSHIFT_COMMIT_SHA}-linux-amd64.tar.gz" "${OPENSHIFT_INSTALL_TMP}" -rf
+  && rm "openshift-origin-client-tools-${OPENSHIFT_VERSION}-${OPENSHIFT_COMMIT_SHA}-linux-64bit.tar.gz" "${OPENSHIFT_INSTALL_TMP}" -rf
 
 # install firefox deps
 RUN apt-get update && apt-get install -y iceweasel \
   && dpkg -P --force-all iceweasel
 # install firefox
-ENV FIREFOX_VERSION 42.0
-ENV FIREFOX_SHA 717e95a8db926d000edb5220b9d63344a4de4cc3d6af2e374d2a39eaf1e873066d7d1b1cef3fa2c744d7587b548035aeefbcaef41478a09012aa3581605d17ec
+ENV FIREFOX_VERSION 47.0.1
+ENV FIREFOX_SHA a56b2ad26df424f008d96968a4e6a10406694b33f42d962f19dff1a0bcdf261bca5dd0e5c6f3af32d892c3268da5ebee8ce182090f04f8480d37d232ccd23b9f
 ENV FIREFOX_INSTALL_TMP /tmp/.jubicoy-firefox-tmp
 RUN mkdir -p "${FIREFOX_INSTALL_TMP}/extracted" \
   && cd "${FIREFOX_INSTALL_TMP}" \
