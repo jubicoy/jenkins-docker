@@ -6,17 +6,19 @@ USER root
 RUN dpkg --add-architecture i386
 RUN apt-get update && apt-get install -y \
     build-essential \
+    chromium \
+    chromedriver \
     expect \
-    lib32stdc++6 \
+    gettext \
+    jq \
+    make \
     maven \
-    gcc-5-base:i386 \
+    ldap-utils \
+    lib32stdc++6 \
     libgcc1:i386 \
     libc6:i386 \
+    libxml-xpath-perl \
     zlib1g:i386 \
-    make \
-    gettext \
-    ldap-utils \
-    jq \
   && rm -rf /var/lib/apt/lists/*
 
 # from nodejs/docker-node
