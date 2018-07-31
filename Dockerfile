@@ -5,6 +5,7 @@ USER root
 # Extra deps
 RUN dpkg --add-architecture i386
 RUN apt-get update && apt-get install -y \
+    apt-transport-https \
     build-essential \
     chromium \
     chromedriver \
@@ -21,6 +22,16 @@ RUN apt-get update && apt-get install -y \
     zlib1g:i386 \
   && rm -rf /var/lib/apt/lists/*
 
+# Add dotnet repository
+# https://www.microsoft.com/net/learn/get-started-with-dotnet-tutorial#linuxdebian
+RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.asc.gpg \
+  && mv microsoft.asc.gpg /etc/apt/trusted.gpg.d/ \
+  && wget -q https://packages.microsoft.com/config/debian/9/prod.list \
+  && mv prod.list /etc/apt/sources.list.d/microsoft-prod.list \
+  && apt-get update \
+  && apt-get install -y dotnet-sdk-2.1 \
+  && rm -rf /var/lib/apt/lists/*
+
 # from nodejs/docker-node
 # gpg keys listed at https://github.com/nodejs/node#release-team
 RUN set -ex \
@@ -33,13 +44,14 @@ RUN set -ex \
     B9AE9905FFD7803F25714661B63B535A4C206CA9 \
     56730D5401028683275BD23C23EFEFE93C4CFFFE \
     77984A986EBC2AA786BC0F66B01FBB92821C587A \
+    8FCCA13FEF1D0C2E91008E09770F7A9A5AE15600 \
   ; do \
     gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
     gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
     gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
   done
 
-ENV NODE_VERSION 8.11.2
+ENV NODE_VERSION 8.11.3
 
 RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   && case "${dpkgArch##*-}" in \
@@ -59,7 +71,7 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   && rm "node-v$NODE_VERSION-linux-$ARCH.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt \
   && ln -s /usr/local/bin/node /usr/local/bin/nodejs
 
-ENV YARN_VERSION 1.6.0
+ENV YARN_VERSION 1.9.2
 
 RUN set -ex \
   && for key in \
