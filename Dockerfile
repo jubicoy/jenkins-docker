@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y \
 
 # Add dotnet repository
 # https://www.microsoft.com/net/learn/get-started-with-dotnet-tutorial#linuxdebian
-RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.asc.gpg \
+RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --batch --dearmor > microsoft.asc.gpg \
   && mv microsoft.asc.gpg /etc/apt/trusted.gpg.d/ \
   && wget -q https://packages.microsoft.com/config/debian/9/prod.list \
   && mv prod.list /etc/apt/sources.list.d/microsoft-prod.list \
@@ -46,9 +46,9 @@ RUN set -ex \
     77984A986EBC2AA786BC0F66B01FBB92821C587A \
     8FCCA13FEF1D0C2E91008E09770F7A9A5AE15600 \
   ; do \
-    gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" || \
-    gpg --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys "$key" || \
-    gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys "$key" ; \
+    gpg --batch --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" || \
+    gpg --batch --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys "$key" || \
+    gpg --batch --keyserver hkp://pgp.mit.edu:80 --recv-keys "$key" ; \
   done
 
 ENV NODE_VERSION 8.11.4
@@ -77,9 +77,9 @@ RUN set -ex \
   && for key in \
     6A010C5166006599AA17F08146C2130DFD2497F5 \
   ; do \
-    gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
-    gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
-    gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
+    gpg --batch --keyserver pgp.mit.edu --recv-keys "$key" || \
+    gpg --batch --keyserver keyserver.pgp.com --recv-keys "$key" || \
+    gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
   done \
   && curl -fSLO --compressed "https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz" \
   && curl -fSLO --compressed "https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz.asc" \
